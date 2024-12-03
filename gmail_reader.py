@@ -47,6 +47,7 @@ def initialize_redis():
         client = redis.StrictRedis(
             host=REDIS_HOST,
             port=REDIS_PORT,
+            db=0,
             decode_responses=True
             )
         if client.ping():
@@ -90,7 +91,7 @@ def authenticate_gmail_api():
 
 
 # Fetch and cache emails
-def get_cached_emails(service, max_results=10):
+def get_cached_emails(service, max_results=100):
     cache_key = "emails_cache"
     cached_emails = redis_client.get(cache_key)
 
@@ -108,7 +109,7 @@ def get_cached_emails(service, max_results=10):
 
 
 # Get the emails from the Gmail inbox
-def get_emails(service, max_results=10):
+def get_emails(service, max_results=100):
     """Fetch the most recent emails from the inbox"""
     try:
         # Call the Gmail API to fetch the inbox
@@ -123,7 +124,7 @@ def get_emails(service, max_results=10):
         if not messages:
             print('No new messages found.')
         else:
-            for message in messages[:10]:
+            for message in messages[:100]:
                 msg = service.users().messages().get(
                     userId='me',
                     id=message['id']
