@@ -207,27 +207,42 @@ def display_email_insights(insights):
     categories = [email['category'] for email in insights]
     category_counts = Counter(categories)
 
+    # Create the category distribution pie chart
     plt.figure()
     plt.pie(
         category_counts.values(),
         labels=category_counts.keys(),
         autopct='%1.1f%%'
-        )
+    )
     plt.title("Email Category Distribution")
-    plt.show()
 
-    # Top senders per category
-    category_senders = [f"{email['category']} - {email['sender']}"
-                        for email in insights]
-    top_senders = Counter(category_senders).most_common(5)
+    # Create the priority distribution bar chart
+    priorities = [email['priority'] for email in insights]
+    priority_counts = Counter(priorities)
 
-    senders, counts = zip(*top_senders)
     plt.figure()
-    plt.bar(senders, counts)
-    plt.title("Top 5 Senders per Category")
-    plt.xlabel("Sender - Category")
+    plt.bar(priority_counts.keys(), priority_counts.values())
+    plt.title("Email Priority Distribution")
+    plt.xlabel("Priority")
     plt.ylabel("Count")
-    plt.xticks(rotation=45)
+
+    # Create the top senders bar chart for each category
+    for category in category_counts.keys():
+        category_senders = [
+            email['sender'] for email in insights if
+            email['category'] == category]
+        top_senders = Counter(category_senders).most_common(5)
+
+        if top_senders:
+            senders, counts = zip(*top_senders)
+            plt.figure()
+            plt.bar(senders, counts)
+            plt.title(f"Top 5 Senders for {category} Emails")
+            plt.xlabel("Sender")
+            plt.ylabel("Count")
+            plt.xticks(rotation=45)
+
+    # Display all figures at once
     plt.show()
 
 
