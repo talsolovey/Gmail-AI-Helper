@@ -12,6 +12,7 @@ from collections import Counter
 from colorama import Fore, Style
 from tqdm import tqdm
 import subprocess
+import numpy as np
 
 # Constants
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -207,16 +208,18 @@ def display_email_insights(insights):
     categories = [email['category'] for email in insights]
     category_counts = Counter(categories)
 
-    # Create the category distribution pie chart
     plt.figure()
     plt.pie(
         category_counts.values(),
         labels=category_counts.keys(),
         autopct='%1.1f%%'
-    )
+        )
     plt.title("Email Category Distribution")
+    plt.show(block=False)
+    plt.pause(2)
+    plt.close()
 
-    # Create the priority distribution bar chart
+    # Priority distribution
     priorities = [email['priority'] for email in insights]
     priority_counts = Counter(priorities)
 
@@ -225,24 +228,49 @@ def display_email_insights(insights):
     plt.title("Email Priority Distribution")
     plt.xlabel("Priority")
     plt.ylabel("Count")
+    plt.show(block=False)
+    plt.pause(2)
+    plt.close()
 
-    # Create the top senders bar chart for each category
-    for category in category_counts.keys():
+    # Combined Top Senders per Category
+    categories = list(category_counts.keys())
+    top_senders_data = {}
+
+    for category in categories:
         category_senders = [
-            email['sender'] for email in insights if
-            email['category'] == category]
+            email['sender'] for email in insights if email['category'] == category
+        ]
         top_senders = Counter(category_senders).most_common(5)
+        top_senders_data[category] = top_senders
 
-        if top_senders:
-            senders, counts = zip(*top_senders)
-            plt.figure()
-            plt.bar(senders, counts)
-            plt.title(f"Top 5 Senders for {category} Emails")
-            plt.xlabel("Sender")
-            plt.ylabel("Count")
-            plt.xticks(rotation=45)
+    # Prepare the data for plotting
+    all_senders = set()
+    for senders in top_senders_data.values():
+        all_senders.update([sender for sender, _ in senders])
+    
+    all_senders = list(all_senders)
+    x = np.arange(len(all_senders))
+    width = 0.15
 
-    # Display all figures at once
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    for i, category in enumerate(categories):
+        counts = [0] * len(all_senders)
+        for sender, count in top_senders_data[category]:
+            if sender in all_senders:
+                index = all_senders.index(sender)
+                counts[index] = count
+        ax.bar(x + i * width, counts, width, label=category)
+
+    # Set labels and title
+    ax.set_xlabel('Senders')
+    ax.set_ylabel('Count')
+    ax.set_title('Top 5 Senders per Category')
+    ax.set_xticks(x + width * (len(categories) - 1) / 2)
+    ax.set_xticklabels(all_senders, rotation=45, ha="right")
+    ax.legend()
+
+    plt.tight_layout()
     plt.show()
 
 
